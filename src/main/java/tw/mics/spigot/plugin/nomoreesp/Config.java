@@ -10,10 +10,32 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public enum Config {
+    DEBUG("debug", false, "is plugin show debug message?"),
+    HIDE_ENTITY_ENABLE("hide-entity.enable", true, ""),
+    HIDE_ENTITY_ENABLE_WORLDS("hide-entity.enable-worlds", Arrays.asList("world","world_nether","world_the_end"), ""),
+    HIDE_ENTITY_HIDE_LIST("hide-entity.hide-list", Arrays.asList("PLAYER","VILLAGER"), ""),
+    HIDE_ENTITY_HIDE_RANGE("hide-entity.hide-range", 48, ""),
 
-    ONLY_PLAYER("only-player", false, "ESP check is only on player?"),
-    SEND_FAKE_HEALTH("fake-health", true, "entities health is fake to player (anti health display)"),
-    ENABLE_WORLDS("enable-worlds", Arrays.asList("world","world_nether","world_the_end"), "entities on these worlds will be hide");
+    FAKE_HEALTH_ENABLE("fake-health.enable", true, ""),
+    FAKE_HEALTH_ENABLE_WORLDS("fake-health.enable-worlds", Arrays.asList("world","world_nether","world_the_end"), ""),
+    FAKE_HEALTH_DISABLE_LIST("fake-health.disable-list", Arrays.asList("HORSE", "ZOMBIE_HORSE", 
+            "SKELETON_HORSE", "DONKEY", "LLAMA", "MULE", "PIG", "WOLF"), ""),
+    
+    XRAY_DETECT_ENABLE("xray-detect.enable", true, ""),
+    XRAY_DETECT_ENABLE_WORLDS("xray-detect.enable-worlds", Arrays.asList("world"), ""),
+    XRAY_DETECT_ADD_VL_BLOCK_AND_NUMBER("xray-detect.vl-list", Arrays.asList(
+            "IRON_ORE:1",
+            "GOLD_ORE:3",
+            "DIAMOND_ORE:5",
+            "EMERALD_ORE:5",
+            "GOLD_BLOCK:5",
+            "CHEST:6",
+            "TRAPPED_CHEST:6"
+            ), "You can remove gold ore and gold block if your server gold is NOT high value."),
+    XRAY_DETECT_GOLD_VL_DIVIDED_NUMBER_IN_MESA("xray-detect.gold-vl-divided-number-in-mesa", 3, 
+            "gold is much more in mesa"),
+    XRAY_DETECT_RUN_COMMAND_VL("xray-detect.run_command_vl", 400, "do not less than 300, will false postive."),
+    XRAY_DETECT_RUN_COMMAND("xray-detect.run_command", "ban %PLAYER% do not use x-ray", "");
 
     private final Object value;
     private final String path;
@@ -73,21 +95,30 @@ public enum Config {
 
     public static void load() {
         boolean save_flag = false;
-
-        getPlugin().getDataFolder().mkdirs();
+        
+        NoMoreESP.getInstance().getDataFolder().mkdirs();
         String header = "";
         cfg = YamlConfiguration.loadConfiguration(f);
 
         for (Config c : values()) {
-            header += c.getPath() + ": " + c.getDescription() + System.lineSeparator();
+            if(c.getDescription().toLowerCase().equals("removed")){
+                if(cfg.contains(c.getPath())){
+                    save_flag = true;
+                    cfg.set(c.getPath(), null);
+                }
+                continue;
+            }
+            if(!c.getDescription().isEmpty()){
+                header += c.getPath() + ": " + c.getDescription() + System.lineSeparator();
+            }
             if (!cfg.contains(c.getPath())) {
                 save_flag = true;
                 c.set(c.getDefaultValue(), false);
             }
         }
         cfg.options().header(header);
-
-        if (save_flag) {
+        
+        if(save_flag){
             save();
             cfg = YamlConfiguration.loadConfiguration(f);
         }
